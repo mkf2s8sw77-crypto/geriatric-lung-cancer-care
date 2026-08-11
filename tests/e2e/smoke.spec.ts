@@ -64,6 +64,18 @@ test.describe('nurse mobile smoke', () => {
     await expect(page.locator('h1')).toContainText('预警列表');
   });
 
+  test('nurse can adopt AI analysis', async ({ page }) => {
+    await login(page, 'nurse_demo', 'Demo@2026');
+    // 找一个 AI 分析
+    const list = await page.request.get('/geriatric-lung-cancer-care/api/patient/assessments/draft').catch(() => null);
+    // 直接通过 API 找一个 AI analysis 并采纳
+    // 用 server side data via API is harder; use DB-direct for test
+    const resp = await page.request.post('/geriatric-lung-cancer-care/api/nurse/ai-analyses/3', {
+      data: { status: '已采纳', note: 'e2e test' },
+    });
+    expect(resp.ok()).toBeTruthy();
+  });
+
   test('nurse creates a patient', async ({ page }) => {
     await login(page, 'nurse_demo', 'Demo@2026');
     await page.goto('/geriatric-lung-cancer-care/nurse/patients/new');
