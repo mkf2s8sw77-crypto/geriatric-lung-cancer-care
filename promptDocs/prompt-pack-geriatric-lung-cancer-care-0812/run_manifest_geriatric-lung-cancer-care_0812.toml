@@ -1,0 +1,100 @@
+version = 1
+project_name = "geriatric-lung-cancer-care"
+repo_path = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care"
+workspace_mode = "in-place"
+workspace_ref = "HEAD"
+cleanup_on_success = false
+cleanup_on_failure = false
+claude_command = "claude"
+default_max_turns = 120
+default_effort = "high"
+
+# 执行固定参数：若 12168 在实施时被其他项目占用，只能换用 10000—20000
+# 的空闲端口，并同步更新 AGENTS.md、环境、Playwright、本文件和健康检查 URL。
+project_dir = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care"
+base_path = "/geriatric-lung-cancer-care"
+preferred_port = 12168
+public_url = "https://sys.huli.sh.cn/geriatric-lung-cancer-care/"
+
+[docs]
+master_spec = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care/promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/master_spec_geriatric-lung-cancer-care_0812.md"
+test_case = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care/promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/test_case_geriatric-lung-cancer-care_0812.md"
+
+[bootstrap]
+init_git_if_missing = true
+commands = [
+  "node --version",
+  "npm --version",
+  "test \"$(npm config get registry)\" = \"https://registry.npmjs.org/\" || npm config set registry https://registry.npmjs.org/ --location=project",
+]
+
+[gates]
+preflight = [
+  "test -f AGENTS.md",
+  "test -f promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/master_spec_geriatric-lung-cancer-care_0812.md",
+  "test -f ../logo.png",
+]
+post_phase = []
+
+[review]
+max_rounds = 3
+
+[smoke]
+max_rounds = 3
+
+[deploy]
+enabled = true
+start_command = "npm run start -- --hostname 127.0.0.1 --port 12168"
+healthcheck_url = "http://127.0.0.1:12168/geriatric-lung-cancer-care/api/health"
+
+[[phases]]
+id = "p1"
+prompt = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care/promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/LLM_prompt_geriatric-lung-cancer-care-p1_0812.md"
+max_turns = 140
+effort = "high"
+gate_commands = [
+  "npm run db:reset",
+  "npm run lint",
+  "npm run typecheck",
+  "npm run test",
+  "npm run build",
+]
+
+[[phases]]
+id = "p2"
+prompt = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care/promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/LLM_prompt_geriatric-lung-cancer-care-p2_0812.md"
+max_turns = 140
+effort = "high"
+gate_commands = [
+  "npm run db:reset",
+  "npm run lint",
+  "npm run typecheck",
+  "npm run test",
+  "npm run build",
+  "npm run test:e2e -- --project=mobile-chromium",
+]
+
+[[phases]]
+id = "p3"
+prompt = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care/promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/LLM_prompt_geriatric-lung-cancer-care-p3_0812.md"
+max_turns = 160
+effort = "high"
+gate_commands = [
+  "npm run db:reset",
+  "npm run lint",
+  "npm run typecheck",
+  "npm run test",
+  "npm run build",
+  "npm run test:e2e -- --project=desktop-chromium",
+]
+
+[[phases]]
+id = "p4"
+prompt = "/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care/promptDocs/prompt-pack-geriatric-lung-cancer-care-0812/LLM_prompt_geriatric-lung-cancer-care-p4_0812.md"
+max_turns = 180
+effort = "high"
+gate_commands = [
+  "npm run db:reset",
+  "npm run verify",
+  "test -f 'docs/老年肺癌患者症状群智能评估与全病程管理系统概要设计 2026-08-12.md'",
+]

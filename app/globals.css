@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+* { box-sizing: border-box; }
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brand-logo {
+  object-fit: contain;
+  width: 100%;
+  height: auto;
+}
