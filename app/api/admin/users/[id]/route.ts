@@ -12,6 +12,8 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
   const admin = await requireRole('ADMIN');
   const id = parseInt(ctx.params.id, 10);
   if (!Number.isFinite(id)) return NextResponse.json({ ok: false, error: '用户 ID 非法' }, { status: 400 });
+  // 禁止管理员对自己账号执行敏感操作，避免自锁
+  if (id === admin.id) return NextResponse.json({ ok: false, error: '不允许对自己的账号执行此操作' }, { status: 400 });
   let raw: unknown;
   try { raw = await req.json(); } catch { return NextResponse.json({ ok: false, error: '请求体非法' }, { status: 400 }); }
   const parsed = schema.safeParse(raw);

@@ -91,6 +91,18 @@ export async function submitAssessment(assessmentId: number, patientId: number) 
   const draft = await getAssessmentDraft(assessmentId, patientId);
   if (!draft) throw new Error('评估不存在或不属于当前患者');
   if (draft.status === '已提交') throw new Error('评估已提交，不能重复提交');
+  // 24小时内最多提交一次（防止网络重试/双击产生重复预警）
+  const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const recent = await db.select({ id: assessments.id, submittedAt: assessments.submittedAt })
+    .from(assessments)
+    .where(and(eq(assessments.patientId, patientId), eq(assessments.status, '已提交')))
+    .limit(20);
+  const tooRecent = recent.find((r) => r.submittedAt && r.submittedAt > oneDayAgo && r.id !== assessmentId);
+  if (tooRecent) {
+    const lastTime = tooRecent.submittedAt ? new Date(tooRecent.submittedAt).toLocaleString('zh-CN', { hour12: false }) : '';
+    throw new Error('24 小时内已有评估记录（' + lastTime + '），请稍后再提交');
+  }
   const unanswered = draft.items.filter((it) => it.score === null);
   if (unanswered.length > 0) throw new Error('仍有未完成的题目');
   const inputs = draft.items.map((it) => ({ itemCode: it.code, itemName: it.name, score: it.score as number, weight: 1.0 }));

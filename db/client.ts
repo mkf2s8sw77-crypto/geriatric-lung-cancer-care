@@ -14,7 +14,14 @@ function resolveDbPath(): string {
   }
   const filePath = raw.slice(5);
   if (!filePath) throw new Error('DATABASE_URL 文件路径为空');
-  return path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+  const resolved = path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+  // 严格限制：数据库文件必须在项目根目录的 data/ 子目录下
+  const projectRoot = path.resolve(process.cwd());
+  const dataDir = path.resolve(projectRoot, 'data');
+  if (!resolved.startsWith(dataDir + path.sep) && resolved !== dataDir) {
+    throw new Error(`数据库路径必须在项目 data/ 目录下: ${resolved}`);
+  }
+  return resolved;
 }
 
 export function getDb(): BetterSQLite3Database<typeof schema> {

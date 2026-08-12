@@ -90,13 +90,17 @@ export async function deactivateUserAccount(userId: number, actorUserId: number,
   const db = getDb();
   await db.update(users).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(users.id, userId));
   await db.delete(sessions).where(eq(sessions.userId, userId));
-  await recordAudit({ actorUserId, actorRole, action: '账号停用', targetType: '账号', targetId: String(userId) });
+  const u = await db.select({ username: users.username, role: users.role, displayName: users.displayName }).from(users).where(eq(users.id, userId)).limit(1);
+  const label = u[0] ? (u[0].displayName + '（' + u[0].username + ' / ' + u[0].role + '）') : ('#' + userId);
+  await recordAudit({ actorUserId, actorRole, action: '账号停用', targetType: '账号', targetId: String(userId), summary: '停用账号 ' + label });
 }
 
 export async function activateUserAccount(userId: number, actorUserId: number, actorRole: string) {
   const db = getDb();
   await db.update(users).set({ isActive: true, updatedAt: new Date().toISOString() }).where(eq(users.id, userId));
-  await recordAudit({ actorUserId, actorRole, action: '账号启用', targetType: '账号', targetId: String(userId) });
+  const u = await db.select({ username: users.username, role: users.role, displayName: users.displayName }).from(users).where(eq(users.id, userId)).limit(1);
+  const label = u[0] ? (u[0].displayName + '（' + u[0].username + ' / ' + u[0].role + '）') : ('#' + userId);
+  await recordAudit({ actorUserId, actorRole, action: '账号启用', targetType: '账号', targetId: String(userId), summary: '启用账号 ' + label });
 }
 
 export async function resetUserPassword(userId: number, actorUserId: number, actorRole: string) {
@@ -105,6 +109,8 @@ export async function resetUserPassword(userId: number, actorUserId: number, act
   const hash = await hashPassword(newPassword);
   await db.update(users).set({ passwordHash: hash, updatedAt: new Date().toISOString() }).where(eq(users.id, userId));
   await db.delete(sessions).where(eq(sessions.userId, userId));
-  await recordAudit({ actorUserId, actorRole, action: '重置密码', targetType: '账号', targetId: String(userId) });
+  const u = await db.select({ username: users.username, role: users.role, displayName: users.displayName }).from(users).where(eq(users.id, userId)).limit(1);
+  const label = u[0] ? (u[0].displayName + '（' + u[0].username + ' / ' + u[0].role + '）') : ('#' + userId);
+  await recordAudit({ actorUserId, actorRole, action: '重置密码', targetType: '账号', targetId: String(userId), summary: '重置 ' + label + ' 的密码' });
   return newPassword;
 }

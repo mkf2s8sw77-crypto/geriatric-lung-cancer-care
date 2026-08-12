@@ -71,6 +71,11 @@ export default async function PatientHome() {
           <div className="space-y-1">
             <p className="text-sm">最近评估：总分 <span className="font-semibold">{lastSubmitted.totalScore?.toFixed(1) ?? '—'}</span></p>
             <p className="text-sm flex items-center gap-2">风险：<RiskBadge level={lastSubmitted.riskLevel as 'low' | 'medium' | 'high' | null} /></p>
+            <p className="text-xs">
+              <Link href={'/patient/assessments/' + lastSubmitted.id} className="text-brand-700 underline">查看本次结果</Link>
+              <span className="mx-1 text-slate-400">·</span>
+              <Link href="/patient/trends" className="text-brand-700 underline">历史趋势</Link>
+            </p>
             <p className="text-xs text-slate-500">本结果为演示评估，须经医护人员复核。</p>
           </div>
         ) : (

@@ -184,7 +184,7 @@ export async function seedDatabase(): Promise<void> {
     const displayName = i === 0 ? '演示患者（家属代用）' : genName();
     const userRow = await db.insert(users).values({ username, displayName, role: 'PATIENT', passwordHash: patientPwd, isActive: true }).returning({ id: users.id });
     const userId = userRow[0].id;
-    const stage = pick(STAGES);
+    const stage = STAGES[i % STAGES.length];
     const status = patientDistribution[i];
     const enrollmentDate = isoDay(-randInt(30, 360));
     const followupDate = isoDay(randInt(1, 30));

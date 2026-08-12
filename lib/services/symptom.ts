@@ -12,8 +12,10 @@ const SYMPTOM_NAME_MAP: Record<string, string> = {
 
 export const SYMPTOM_OPTIONS = SYMPTOM_NAME_MAP;
 
+const ALLOWED_SYMPTOM_CODES = Object.keys(SYMPTOM_OPTIONS);
+
 export const symptomReportSchema = z.object({
-  symptomCode: z.string().min(1).max(40),
+  symptomCode: z.enum(ALLOWED_SYMPTOM_CODES as [string, ...string[]]),
   severity: z.coerce.number().int().min(0).max(10),
   occurredAt: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/),
   note: z.string().max(500).optional().default(''),

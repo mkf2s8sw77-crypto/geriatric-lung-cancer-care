@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { requireRole } from '../../../../../lib/guard';
 import { adoptAIAnalysis } from '../../../../../lib/services/ai';
+import { getDb } from '../../../../../db/client';
+import { aiAnalyses, patients } from '../../../../../db/schema';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +22,12 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
   try { raw = await req.json(); } catch { return NextResponse.json({ ok: false, error: '请求体非法' }, { status: 400 }); }
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message || '请检查表单' }, { status: 400 });
+  // 验证权限：护士必须是该 AI 分析所属患者的责任护士
+  const db = getDb();
+  const aRows = await db.select().from(aiAnalyses).where(eq(aiAnalyses.id, id)).limit(1);
+  if (aRows.length === 0) return NextResponse.json({ ok: false, error: 'AI 分析不存在' }, { status: 404 });
+  const pRows = await db.select().from(patients).where(eq(patients.id, aRows[0].patientId)).limit(1);
+  if (pRows.length === 0 || pRows[0].primaryNurseId !== nurse.id) return NextResponse.json({ ok: false, error: '您不是该患者的责任护士' }, { status: 403 });
   try {
     await adoptAIAnalysis(id, parsed.data.status, parsed.data.note || '', nurse.id, nurse.role);
     return NextResponse.json({ ok: true });
