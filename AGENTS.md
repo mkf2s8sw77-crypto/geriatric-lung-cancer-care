@@ -69,6 +69,10 @@
 
 - 修复护士调整任务时 `status` 字段未从 API 传递到 service（导致无法通过 API 修改任务状态，状态机卡住）。调整任务若新状态不是"已完成"，自动清空 `completed_at` 保持一致。
 
+### 第四轮：状态机深化
+
+- 调整任务时若新状态是"已完成"，自动设置 `completed_at = 当前时间`；若新状态不是"已完成"，清空 `completed_at`。已"已完成"任务再次调整时保留原 `completed_at`，避免覆盖历史完成时间。
+
 ## 环境变量
 
 - `.env.example` 必须包含 `DATABASE_URL`、`SESSION_SECRET`、`APP_BASE_PATH`、`PORT`、`AI_MODE`，不得包含真实密钥。
