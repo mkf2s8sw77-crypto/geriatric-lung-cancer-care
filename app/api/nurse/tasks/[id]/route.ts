@@ -9,12 +9,14 @@ import { patients } from '../../../../../db/schema';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const STATUSES = ['待完成', '已完成', '未完成', '暂不适用', '已取消'] as const;
 const adjustSchema = z.object({
   action: z.enum(['调整', '取消']),
   reason: z.string().trim().min(5, '请填写调整原因（不少于 5 字）').max(500),
   scheduledDate: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}/).optional(),
   title: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional(),
+  status: z.enum(STATUSES).optional(),
 });
 
 export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
@@ -36,10 +38,11 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
     if (parsed.data.action === '取消') {
       await cancelTask(id, nurse.id, parsed.data.reason);
     } else {
-      const fields: { scheduledDate?: string; title?: string; description?: string } = {};
+      const fields: { scheduledDate?: string; title?: string; description?: string; status?: string } = {};
       if (parsed.data.scheduledDate) fields.scheduledDate = parsed.data.scheduledDate;
       if (parsed.data.title) fields.title = parsed.data.title;
       if (parsed.data.description !== undefined) fields.description = parsed.data.description;
+      if (parsed.data.status) fields.status = parsed.data.status;
       await adjustTaskByNurse(id, nurse.id, fields, parsed.data.reason);
     }
     return NextResponse.json({ ok: true });
