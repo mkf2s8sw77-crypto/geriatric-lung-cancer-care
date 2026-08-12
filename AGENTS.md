@@ -65,6 +65,10 @@
 - 症状报告的发生时间限制在 30 天内（"发生时间不能早于 30 天前"），避免错误录入历史数据。
 - 补充实现：护士代填评估 API + 页面（`/nurse/patients/[id]/assessments/new`），记录来源为"护士代填"并写入审计日志。
 
+### 第三轮：API 完整性
+
+- 修复护士调整任务时 `status` 字段未从 API 传递到 service（导致无法通过 API 修改任务状态，状态机卡住）。调整任务若新状态不是"已完成"，自动清空 `completed_at` 保持一致。
+
 ## 环境变量
 
 - `.env.example` 必须包含 `DATABASE_URL`、`SESSION_SECRET`、`APP_BASE_PATH`、`PORT`、`AI_MODE`，不得包含真实密钥。
