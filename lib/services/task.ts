@@ -67,7 +67,15 @@ export async function adjustTaskByNurse(taskId: number, nurseUserId: number, fie
   if (fields.status) update.status = fields.status;
   // 如果新状态不是已完成，清除 completed_at 保持一致性
   const newStatus = fields.status || prev.status;
-  if (newStatus !== '已完成') update.completedAt = null;
+  if (newStatus === '已完成') {
+    // 如果当前没有 completed_at 或状态机从非已完成→已完成, 设置为当前时间
+    if (!prev.completedAt || prev.status !== '已完成') {
+      update.completedAt = new Date().toISOString();
+    }
+  } else {
+    // 切到非已完成状态, 清空 completed_at 保持一致
+    update.completedAt = null;
+  }
   await db.update(tasks).set(update).where(eq(tasks.id, taskId));
   await recordAudit({
     actorUserId: nurseUserId,
