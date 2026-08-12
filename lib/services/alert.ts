@@ -19,6 +19,7 @@ export async function handleAlert(alertId: number, nurseUserId: number, data: z.
   const pRows = await db.select().from(patients).where(eq(patients.id, alert.patientId)).limit(1);
   if (pRows.length === 0) throw new Error('患者不存在');
   if (pRows[0].primaryNurseId !== nurseUserId) throw new Error('您不是该患者的责任护士');
+  if (alert.status !== '未处理') throw new Error('预警已处理，无需重复操作');
 
   await db.update(alerts).set({
     status: data.action,

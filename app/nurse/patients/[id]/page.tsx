@@ -35,8 +35,9 @@ export default async function NursePatientDetail({ params }: { params: { id: str
       <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
         <h2 className="text-base font-semibold">任务与护理路径</h2>
         <p className="text-xs text-slate-500">已分配路径 {pathways.length} 套。系统不会自动调整任务；如需调整请使用下方操作。</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href={'/nurse/patients/' + p.id + '/tasks/new'} className="min-h-touch inline-flex items-center px-3 rounded-md bg-brand-600 text-white text-sm">新增任务</Link>
+          <Link href={'/nurse/patients/' + p.id + '/assessments/new'} className="min-h-touch inline-flex items-center px-3 rounded-md border border-slate-300 text-sm">代填评估</Link>
         </div>
         <ul className="mt-2 space-y-2">
           {recentTasks.map((t) => (

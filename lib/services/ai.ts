@@ -65,6 +65,9 @@ export async function runAIForLatestAssessment(patientId: number, nurseUserId: n
 
 export async function adoptAIAnalysis(id: number, status: '已采纳' | '部分采纳' | '未采纳', note: string, actorUserId: number, actorRole: string): Promise<void> {
   const db = getDb();
+  const rows = await db.select().from(aiAnalyses).where(eq(aiAnalyses.id, id)).limit(1);
+  if (rows.length === 0) throw new Error('AI 分析不存在');
+  if (rows[0].status !== '已生成') throw new Error('AI 分析已采纳，无需重复操作');
   await db.update(aiAnalyses).set({ status, nurseNote: note }).where(eq(aiAnalyses.id, id));
   const { recordAudit } = await import('../audit');
   await recordAudit({

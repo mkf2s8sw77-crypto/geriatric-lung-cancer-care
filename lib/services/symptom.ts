@@ -30,6 +30,9 @@ export async function createSymptomReport(input: z.infer<typeof symptomReportSch
   const db = getDb();
   const occurredAt = new Date(input.occurredAt);
   if (occurredAt.getTime() > Date.now()) throw new Error('发生时间不能晚于当前时间');
+  // 限制过去时间不超过 30 天，避免明显的错误录入
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  if (occurredAt.getTime() < thirtyDaysAgo) throw new Error('发生时间不能早于 30 天前');
   const name = SYMPTOM_NAME_MAP[input.symptomCode] || input.symptomCode;
   const inserted = await db.insert(symptomReports).values({
     patientId: input.patientId,

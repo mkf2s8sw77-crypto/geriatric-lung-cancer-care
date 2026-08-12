@@ -34,6 +34,8 @@ export async function updatePatientTaskFeedback(taskId: number, patientId: numbe
   const rows = await db.select().from(tasks).where(and(eq(tasks.id, taskId), eq(tasks.patientId, patientId))).limit(1);
   if (rows.length === 0) throw new Error('任务不存在或不属于当前患者');
   const prev = rows[0];
+  // 已取消的任务不能再被患者反馈
+  if (prev.status === '已取消') throw new Error('任务已被护士取消，不能再反馈');
   await db.update(tasks).set({
     status,
     feedbackNote: note,
@@ -56,11 +58,16 @@ export async function adjustTaskByNurse(taskId: number, nurseUserId: number, fie
   const rows = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
   if (rows.length === 0) throw new Error('任务不存在');
   const prev = rows[0];
+  // 已取消的任务不能再调整
+  if (prev.status === '已取消') throw new Error('任务已被取消，不能再调整');
   const update: Record<string, unknown> = { updatedAt: new Date().toISOString(), adjustedReason: reason, adjustedFromId: prev.id };
   if (fields.scheduledDate) update.scheduledDate = fields.scheduledDate;
   if (fields.title) update.title = fields.title;
   if (fields.description !== undefined) update.description = fields.description;
   if (fields.status) update.status = fields.status;
+  // 如果新状态不是已完成，清除 completed_at 保持一致性
+  const newStatus = fields.status || prev.status;
+  if (newStatus !== '已完成') update.completedAt = null;
   await db.update(tasks).set(update).where(eq(tasks.id, taskId));
   await recordAudit({
     actorUserId: nurseUserId,
@@ -100,6 +107,7 @@ export async function cancelTask(taskId: number, nurseUserId: number, reason: st
   const db = getDb();
   const rows = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
   if (rows.length === 0) throw new Error('任务不存在');
+  if (rows[0].status === '已取消') throw new Error('任务已是已取消状态');
   await db.update(tasks).set({ status: '已取消', adjustedReason: reason, updatedAt: new Date().toISOString() }).where(eq(tasks.id, taskId));
   await recordAudit({
     actorUserId: nurseUserId,

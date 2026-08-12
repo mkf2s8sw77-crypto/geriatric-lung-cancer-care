@@ -31,6 +31,8 @@ export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
   if (rows.length === 0) return NextResponse.json({ ok: false, error: '随访不存在' }, { status: 404 });
   const f = rows[0];
   if (f.nurseId !== nurse.id) return NextResponse.json({ ok: false, error: '您不是该随访的责任护士' }, { status: 403 });
+  if (f.status === '已完成') return NextResponse.json({ ok: false, error: '随访已完成，无需重复操作' }, { status: 400 });
+  if (f.status === '已取消') return NextResponse.json({ ok: false, error: '随访已取消，不能标记完成' }, { status: 400 });
   await db.update(followups).set({
     status: '已完成',
     summary: parsed.data.summary,
