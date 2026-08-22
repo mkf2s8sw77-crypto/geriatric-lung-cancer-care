@@ -33,13 +33,23 @@
 - 所有站内链接、静态资源、重定向、Cookie Path、健康检查和截图访问都必须兼容 `basePath`，不能假设部署在域名根路径。
 - 实际项目路径（当前部署）：`/Users/zc-MAC/Downloads/邮件营销项目/苏州市立聂奕轩/geriatric-lung-cancer-care`，run_manifest 中配置的 `/Users/huli-dev/Downloads/projects/苏州市立聂奕轩/geriatric-lung-cancer-care` 路径不可用。
 
-## 当前交付状态（2026-08-12）
+## 当前交付状态（2026-08-22）
 
-- P1—P4 全部完成；`npm run verify`、`lint`、`typecheck`、`test`、`build`、`test:e2e` 全部通过。
+- P1—P4 全部完成（2026-08-12 基线）；Phase 5 · AI 升级（2026-08-22 启动）覆盖：① AI 演示分析升级（4 维度归因 + 3 风格对比 + 证据触发链）② 护士 RAG 知识库智能体（30 条 mock 知识库 + 问答日志）③ 患者 AI 健康管家（推送卡 + 意图对话）。
+- `npm run verify`、`lint`、`typecheck`、`test`、`build`、`test:e2e` 必须全过；每完成一个 Phase 立即回归。
 - 演示账号 `admin_demo` / `nurse_demo` / `patient_demo`，密码 `Demo@2026`。
 - 30 名患者、180 次评估、162 个任务、48 条症状报告、163 条预警、48 条随访、180 条 AI 演示分析、20 条宣教资源。
-- 用户手册：`docs/老年肺癌患者症状群智能评估与全病程管理系统概要设计 2026-08-12.md`，含 22 张 `390×844` 或 `1280×800` 截图。
+- 用户手册：`docs/老年肺癌患者症状群智能评估与全病程管理系统概要设计 2026-08-12.md`，22 → 30 章节、22 → 30 张 `390×844` 或 `1280×800` 截图。
 - 所有演示临床、风险、AI 与量表均为本地确定性内容，明确标注"演示"，不得表述为临床验证。
+
+## 会议背景（2026-08-09 与聂奕轩）
+
+- 纪要：`docs/聂奕轩会议纪要 2026-8-9.md`、`docs/和聂奕轩的电话会议 2026-8-9_原文.md`。
+- 客户期望的三个 AI 方向（已在 Phase 5 中对应落地）：
+  - **AI 智能评估工具**：基于 LLM 的症状群评估，本系统以本地 `mock-geriatric-lung-v1` 系列（含 balanced / conservative / proactive 三个风格）演示。
+  - **AI 健康管家**：以"小龙虾"为代表的患者端 AI 触点，本系统以网页版 `/patient/butler` 演示推送 + 自由对话；微信触点按客户意愿后续扩展。
+  - **ICU/护士智能体**：基于审核知识库的 RAG 问答，本系统以 `/nurse/assistant` 演示 5 大类 30 条 mock 知识库 + mock 检索 + 置信度。
+- 合作预算：1—3 万 / 独立系统；5 万 / 苏州市立医院卫健委课题。首期不接微信、不接 HIS、不接院内系统。
 
 ## Bug 修复记录（部署前排查）
 
@@ -73,6 +83,11 @@
 
 - 调整任务时若新状态是"已完成"，自动设置 `completed_at = 当前时间`；若新状态不是"已完成"，清空 `completed_at`。已"已完成"任务再次调整时保留原 `completed_at`，避免覆盖历史完成时间。
 
+### 第五轮：Phase 5 · AI 升级（2026-08-22 启动）
+
+- 见「会议背景」与「临床与 AI 边界」小节；三件 AI 全做 + 视觉升级，按 Phase 0 → Phase 5 顺序实施；每 Phase 结束立即回归。
+- 实施细节与方案存档于 `artifacts/plan.md`（本会话快照）；不再单独建 Markdown 设计文档。
+
 ## 环境变量
 
 - `.env.example` 必须包含 `DATABASE_URL`、`SESSION_SECRET`、`APP_BASE_PATH`、`PORT`、`AI_MODE`，不得包含真实密钥。
@@ -100,6 +115,15 @@
 - 演示风险结果和 AI 建议不得表述为经过临床验证，不得自动诊断、开药、调整治疗或替代医护人员。
 - 高风险结果只能触发醒目提醒、建议及时就医和人工复核；所有护理建议由护士确认后执行。
 - 演示 AI 必须确定性、可复现、可测试，并显示生成依据、模型标识和演示声明。
+- Phase 5 起所有 AI 能力（`lib/services/ai/` 命名空间）均为本地 mock：
+  - `analysis.ts` —— `mock-geriatric-lung-v1-{balanced|conservative|proactive}` 演示分析；
+  - `agent.ts` —— `mock-kb-agent-v1` 知识库 RAG 智能体；
+  - `butler.ts` —— `mock-butler-v1` 患者 AI 健康管家；
+  - `drafting.ts` —— `mock-drafting-v1` 预警处置 / 随访摘要草稿。
+- 任何 AI 输出的 UI 必须显式展示：模型标识、生成时间、演示声明 / 免责声明。不得隐藏来源。
+- 未来接入真实 LLM 时，UI 与 API 不变；只需替换 `lib/services/ai/` 内部实现并通过 `AI_MODE` 环境变量切换。
+- 知识库条目必须标注来源（演示版）：不得使用未注明"演示"字样的真实指南/共识原文。
+- 症状群归类（躯体 / 营养 / 心理 / 呼吸 4 群）为演示映射，未经过临床验证；UI 中不得标"临床归类"。
 
 ## 品牌与视觉
 
