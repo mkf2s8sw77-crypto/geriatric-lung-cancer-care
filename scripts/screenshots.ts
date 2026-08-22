@@ -27,7 +27,7 @@ async function run() {
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     await page.goto(BASE + '/patient'); await shot(page, 'patient-home-mobile.png');
     await page.goto(BASE + '/patient/assessments/draft'); await shot(page, 'patient-assessment-mobile.png');
     await page.goto(BASE + '/patient/symptoms/new'); await shot(page, 'patient-symptom-mobile.png');
@@ -41,7 +41,7 @@ async function run() {
   {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     await page.goto(BASE + '/nurse'); await shot(page, 'nurse-home-mobile.png');
     await page.goto(BASE + '/nurse/patients'); await shot(page, 'nurse-patients-mobile.png');
     await page.goto(BASE + '/nurse/patients/new'); await shot(page, 'nurse-patient-new-mobile.png');
@@ -57,7 +57,7 @@ async function run() {
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
-    await login(page, 'admin_demo', 'Demo@2026');
+    await login(page, 'admin', '123456');
     await page.goto(BASE + '/admin'); await shot(page, 'admin-dashboard-desktop.png');
     await page.goto(BASE + '/admin/patients'); await shot(page, 'admin-patients-desktop.png');
     await page.goto(BASE + '/admin/users'); await shot(page, 'admin-users-desktop.png');
