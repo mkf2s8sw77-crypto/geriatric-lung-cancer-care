@@ -354,3 +354,33 @@ export const knowledgeQuestions = sqliteTable('knowledge_questions', {
 }, (t) => ({
   nurseIdx: index('kq_nurse_idx').on(t.nurseUserId),
 }));
+
+// Phase 5 · 患者 AI 健康管家（mock-butler-v1）
+export const aiButlerPushes = sqliteTable('ai_butler_pushes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  patientId: integer('patient_id').notNull().references(() => patients.id),
+  pushType: text('push_type').notNull(),    // 今日任务 / 评估到期 / 随访临近 / 宣教推荐 / 心情打卡
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  cta: text('cta').notNull().default(''),
+  ctaHref: text('cta_href').notNull().default(''),
+  expiresAt: text('expires_at').notNull(),
+  readAt: text('read_at'),
+  createdAt: text('created_at').notNull().default(now()),
+}, (t) => ({
+  patientIdx: index('butler_pushes_patient_idx').on(t.patientId),
+  typeIdx: index('butler_pushes_type_idx').on(t.pushType),
+}));
+
+export const aiButlerConversations = sqliteTable('ai_butler_conversations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  patientId: integer('patient_id').notNull().references(() => patients.id),
+  userText: text('user_text').notNull(),
+  detectedIntent: text('detected_intent').notNull(),
+  botReply: text('bot_reply').notNull(),
+  matchedRuleId: text('matched_rule_id').notNull(),
+  modelVersion: text('model_version').notNull().default('mock-butler-v1'),
+  createdAt: text('created_at').notNull().default(now()),
+}, (t) => ({
+  patientIdx: index('butler_conv_patient_idx').on(t.patientId),
+}));

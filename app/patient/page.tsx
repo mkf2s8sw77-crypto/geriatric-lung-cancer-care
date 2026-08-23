@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { eq, desc, and, gte } from 'drizzle-orm';
+import { eq, desc, and, gte, sql } from 'drizzle-orm';
 import { requireRole } from '../../lib/guard';
 import { getDb } from '../../db/client';
-import { patients, assessments, alerts, tasks, followups, users } from '../../db/schema';
+import { patients, assessments, alerts, tasks, followups, users, aiButlerPushes } from '../../db/schema';
 import { RiskBadge } from '../../components/RiskBadge';
-import { CalendarDays, ClipboardList, Bell, Phone, BookOpen } from 'lucide-react';
+import { CalendarDays, ClipboardList, Bell, Phone, BookOpen, MessageCircleHeart } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +40,13 @@ export default async function PatientHome() {
     const nu = await db.select().from(users).where(eq(users.id, patient.primaryNurseId)).limit(1);
     nurseName = nu[0]?.displayName || '';
   }
+  // 管家未读推送数
+  const unreadRows = await db.select({ c: sql<number>`count(*)` }).from(aiButlerPushes).where(and(eq(aiButlerPushes.patientId, patient.id), sql`${aiButlerPushes.readAt} IS NULL`));
+  const unreadPushes = unreadRows[0]?.c || 0;
+  // 任务完成率
+  const allTasks = await db.select().from(tasks).where(eq(tasks.patientId, patient.id));
+  const completedTasks = allTasks.filter((t) => t.status === '已完成').length;
+  const completionRate = allTasks.length > 0 ? Math.round((completedTasks / allTasks.length) * 100) : 0;
 
   return (
     <div className="space-y-5">
@@ -101,6 +108,16 @@ export default async function PatientHome() {
         <h2 className="text-base font-semibold flex items-center gap-2"><BookOpen size={18} aria-hidden="true" />推荐阅读</h2>
         <p className="text-sm text-slate-500 mt-1">护士将根据您的治疗阶段推荐合适的宣教材料。</p>
         <Link href="/patient/education" className="text-sm text-brand-700 underline">查看宣教资源</Link>
+      </section>
+
+      <section className="bg-gradient-to-br from-brand-50 to-white border border-brand-200 rounded-xl p-4 shadow-sm space-y-2">
+        <h2 className="text-base font-semibold flex items-center gap-2 text-brand-700"><MessageCircleHeart size={18} aria-hidden="true" />我的健康管家（演示）</h2>
+        <p className="text-sm text-slate-600">由本地 mock AI 驱动的小龙虾会主动推送今日任务、随访、宣教等内容，您也可以自由对话提问。</p>
+        {unreadPushes > 0 && <p className="text-xs text-amber-700">您有 {unreadPushes} 条新推送</p>}
+        {allTasks.length > 0 && (
+          <p className="text-xs text-slate-500">任务完成率：{completionRate}%（{completedTasks} / {allTasks.length}）</p>
+        )}
+        <Link href="/patient/butler" className="inline-flex min-h-touch items-center px-4 rounded-md bg-brand-600 text-white text-sm">打开管家</Link>
       </section>
     </div>
   );
