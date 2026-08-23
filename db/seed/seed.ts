@@ -104,13 +104,13 @@ export async function seedDatabase(): Promise<void> {
     try { await db.delete(t); } catch (e) { /* ignore */ }
   }
 
-  const adminPwd = await hashPassword('Demo@2026');
-  const nursePwd = await hashPassword('Demo@2026');
-  const patientPwd = await hashPassword('Demo@2026');
+  const adminPwd = await hashPassword('123456');
+  const nursePwd = await hashPassword('123456');
+  const patientPwd = await hashPassword('123456');
 
-  const adminRow = await db.insert(users).values({ username: 'admin_demo', displayName: '演示管理员', role: 'ADMIN', passwordHash: adminPwd, isActive: true }).returning({ id: users.id });
+  const adminRow = await db.insert(users).values({ username: 'admin', displayName: '演示管理员', role: 'ADMIN', passwordHash: adminPwd, isActive: true }).returning({ id: users.id });
   const adminId = adminRow[0].id;
-  const nurseRow = await db.insert(users).values({ username: 'nurse_demo', displayName: '演示护士', role: 'NURSE', passwordHash: nursePwd, isActive: true }).returning({ id: users.id });
+  const nurseRow = await db.insert(users).values({ username: 'nurse', displayName: '演示护士', role: 'NURSE', passwordHash: nursePwd, isActive: true }).returning({ id: users.id });
   const nurseId = nurseRow[0].id;
 
   const scaleRow = await db.insert(scales).values({
@@ -234,7 +234,7 @@ export async function seedDatabase(): Promise<void> {
   patientDistribution.push('退出');
 
   for (let i = 0; i < totalPatients; i++) {
-    const username = i === 0 ? 'patient_demo' : genUsername(i);
+    const username = i === 0 ? 'patient' : genUsername(i);
     const displayName = i === 0 ? '演示患者（家属代用）' : genName();
     const userRow = await db.insert(users).values({ username, displayName, role: 'PATIENT', passwordHash: patientPwd, isActive: true }).returning({ id: users.id });
     const userId = userRow[0].id;
@@ -442,6 +442,6 @@ export async function seedDatabase(): Promise<void> {
     }
   }
 
-  console.log('[seed] accounts: admin_demo / nurse_demo / patient_demo (password Demo@2026)');
+  console.log('[seed] accounts: admin / nurse / patient (password 123456)');
   console.log('[seed] patients: ' + totalPatients + ' | scales: 1 | pathways: 3 | edu: ' + EDU_BODIES.length);
 }

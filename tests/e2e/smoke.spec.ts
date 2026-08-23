@@ -18,7 +18,7 @@ test.describe('mobile smoke', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('patient logs in and reaches draft assessment page', async ({ page }) => {
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     await expect(page).toHaveURL(/\/patient$/);
     await page.goto('/geriatric-lung-cancer-care/patient/assessments/draft');
     await expect(page.locator('h1')).toContainText('症状评估');
@@ -30,25 +30,25 @@ test.describe('mobile smoke', () => {
   });
 
   test('patient reports a new symptom', async ({ page }) => {
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     await page.goto('/geriatric-lung-cancer-care/patient/symptoms/new');
     await expect(page.locator('h1')).toContainText('主动症状报告');
   });
 
   test('patient views tasks list', async ({ page }) => {
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     await page.goto('/geriatric-lung-cancer-care/patient/tasks');
     await expect(page.locator('h1')).toContainText('任务中心');
   });
 
   test('patient views trends chart', async ({ page }) => {
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     await page.goto('/geriatric-lung-cancer-care/patient/trends');
     await expect(page.locator('h1')).toContainText('近 30 天趋势');
   });
 
   test('RBAC: patient cannot access nurse URL', async ({ page }) => {
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     const resp = await page.goto('/geriatric-lung-cancer-care/nurse');
     // 应重定向到 forbidden 或返回 307
     expect(page.url()).toMatch(/\/(forbidden|patient)/);
@@ -59,19 +59,19 @@ test.describe('nurse mobile smoke', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('nurse logs in and sees dashboard', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     await expect(page).toHaveURL(/\/nurse$/);
     await page.locator('text=演示护士').first().waitFor({ timeout: 15000 });
   });
 
   test('nurse sees alerts list', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     await page.goto('/geriatric-lung-cancer-care/nurse/alerts');
     await expect(page.locator('h1')).toContainText('预警列表');
   });
 
   test('nurse can fill assessment on behalf of patient', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     await page.goto('/geriatric-lung-cancer-care/nurse/patients/1/assessments/new');
     await expect(page.locator('h1')).toContainText('代填评估');
     // 检查页面有 10 道题
@@ -80,7 +80,7 @@ test.describe('nurse mobile smoke', () => {
   });
 
   test('nurse can adopt AI analysis', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     // 直接尝试一个明显存在的 AI id（seed 中固定会有）, 然后跳过如果已采纳
     const resp = await page.request.post('/geriatric-lung-cancer-care/api/nurse/ai-analyses/3', {
       data: { status: '已采纳', note: 'e2e test' },
@@ -90,7 +90,7 @@ test.describe('nurse mobile smoke', () => {
   });
 
   test('nurse creates a patient', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     await page.goto('/geriatric-lung-cancer-care/nurse/patients/new');
     await page.locator('#np-fullName').waitFor({ timeout: 15000 });
     const ts = Date.now().toString().slice(-9);
@@ -108,30 +108,30 @@ test.describe('desktop admin smoke', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('admin sees dashboard', async ({ page }) => {
-    await login(page, 'admin_demo', 'Demo@2026');
+    await login(page, 'admin', '123456');
     await expect(page).toHaveURL(/\/admin$/);
     await page.locator('text=总患者数').first().waitFor({ timeout: 15000 });
   });
 
   test('admin views patient table', async ({ page }) => {
-    await login(page, 'admin_demo', 'Demo@2026');
+    await login(page, 'admin', '123456');
     await page.goto('/geriatric-lung-cancer-care/admin/patients');
     await expect(page.locator('h1')).toContainText('患者管理');
     await expect(page.locator('table tbody tr').first()).toBeVisible();
   });
 
   test('admin exports CSV', async ({ page }) => {
-    await login(page, 'admin_demo', 'Demo@2026');
+    await login(page, 'admin', '123456');
     const resp = await page.request.get('/geriatric-lung-cancer-care/api/admin/research/export');
     expect(resp.ok()).toBeTruthy();
     const body = await resp.text();
     expect(body).toContain('研究编号');
-    expect(body).not.toContain('Demo@2026');
+    expect(body).not.toContain('123456');
     expect(body).not.toContain('138');
   });
 
   test('admin views audit', async ({ page }) => {
-    await login(page, 'admin_demo', 'Demo@2026');
+    await login(page, 'admin', '123456');
     await page.goto('/geriatric-lung-cancer-care/admin/audit');
     await expect(page.locator('h1')).toContainText('审计');
   });
