@@ -6,6 +6,7 @@ import { getDb } from '../../../../db/client';
 import { alerts, patients, interventions } from '../../../../db/schema';
 import { RiskBadge } from '../../../../components/RiskBadge';
 import AlertHandleForm from '../../../../components/AlertHandleForm';
+import AIDraftBox from '../../../../components/AIDraftBox';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,11 @@ export default async function AlertDetailPage({ params }: { params: { id: string
           )}
         </div>
       )}
+
+      <section className="space-y-2">
+        <h2 className="text-base font-semibold">AI 助手</h2>
+        <AIDraftBox type="alert" refId={a.id} endpoint={`/geriatric-lung-cancer-care/api/nurse/alerts/${a.id}/draft`} title="AI 处置草稿（mock-drafting-v1）" />
+      </section>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { patients, assessments, alerts, tasks, patientPathways, pathwaySteps, ai
 import { RiskBadge } from '../../../../components/RiskBadge';
 import TaskRowNurse from '../../../../components/TaskRowNurse';
 import AIAnalysisSection from '../../../../components/AIAnalysisSection';
+import SymptomClusterBadge from '../../../../components/SymptomClusterBadge';
+import { clusterOf } from '../../../../lib/services/symptom-cluster';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,11 +24,18 @@ export default async function NursePatientDetail({ params }: { params: { id: str
   const openAlerts = await db.select().from(alerts).where(eq(alerts.patientId, id)).orderBy(desc(alerts.createdAt)).limit(10);
   const recentTasks = await db.select().from(tasks).where(eq(tasks.patientId, id)).orderBy(desc(tasks.scheduledDate)).limit(20);
   const pathways = await db.select().from(patientPathways).where(eq(patientPathways.patientId, id));
+  const aiCount = (await db.select({ c: aiAnalyses.id }).from(aiAnalyses).where(eq(aiAnalyses.patientId, id))).length;
+  const latestAssess = recent.find((a) => a.status === '已提交');
+  const topCode = latestAssess?.topSymptomCode || null;
+  const cluster = clusterOf(topCode);
   return (
     <div className="space-y-4">
       <Link href="/nurse/patients" className="text-sm text-brand-700 underline">返回患者列表</Link>
       <div className="bg-white rounded-xl p-4 shadow-sm space-y-1">
-        <h1 className="text-lg font-semibold text-brand-700">{p.fullName}</h1>
+        <div className="flex items-start justify-between">
+          <h1 className="text-lg font-semibold text-brand-700">{p.fullName}</h1>
+          {cluster && <SymptomClusterBadge cluster={cluster} />}
+        </div>
         <p className="text-sm">{p.researchNo} · {p.treatmentStage} · {p.status}</p>
         <p className="text-sm text-slate-600">年龄 {p.age} · {p.gender === 'M' ? '男' : '女'} · 诊断：{p.diagnosis}</p>
         <p className="text-sm text-slate-600">纳入日期：{p.enrollmentDate.slice(0, 10)} · 下次随访：{p.followupDate.slice(0, 10)}</p>
@@ -49,18 +58,44 @@ export default async function NursePatientDetail({ params }: { params: { id: str
       </section>
 
       <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
-        <h2 className="text-base font-semibold">最近评估</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">最近评估</h2>
+          {latestAssess && (
+            <div className="flex items-center gap-2 text-xs">
+              <SymptomClusterBadge cluster={cluster} size="xs" />
+              <span className="text-slate-500">主要症状 {latestAssess.topSymptomCode || '—'}</span>
+            </div>
+          )}
+        </div>
         {recent.length === 0 ? <p className="text-sm text-slate-500">暂无评估记录。</p> : (
           <ul className="space-y-1 text-sm">
             {recent.map((a) => (
               <li key={a.id} className="flex justify-between border-b border-slate-100 pb-1 last:border-0">
-                <span>{a.submittedAt?.slice(0, 10) || a.createdAt.slice(0, 10)} · {a.source}</span>
+                <span className="flex items-center gap-2">
+                  {a.submittedAt?.slice(0, 10) || a.createdAt.slice(0, 10)} · {a.source}
+                  <SymptomClusterBadge cluster={clusterOf(a.topSymptomCode)} size="xs" />
+                </span>
                 <span className="flex items-center gap-2">{a.totalScore?.toFixed(1) ?? '—'} <RiskBadge level={a.riskLevel as 'low' | 'medium' | 'high' | null} /></span>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {openAlerts.length > 0 && (
+        <section className="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-2">
+          <h2 className="text-base font-semibold text-rose-700">近期预警（{openAlerts.length}）</h2>
+          <ul className="space-y-1 text-sm">
+            {openAlerts.slice(0, 5).map((a) => (
+              <li key={a.id} className="flex items-center justify-between">
+                <span>{a.summary} <RiskBadge level={a.level as 'low' | 'medium' | 'high'} /></span>
+                <Link href={'/nurse/alerts/' + a.id} className="text-xs text-brand-700 underline">查看</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <AIAnalysisSection patientId={id} patientName={p.fullName} />
     </div>
   );

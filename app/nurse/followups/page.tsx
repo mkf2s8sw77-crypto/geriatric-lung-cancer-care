@@ -31,7 +31,12 @@ export default async function FollowupsPage() {
                 <span className={`text-xs px-2 py-1 rounded-full ${f.status === '已完成' ? 'bg-emerald-100 text-emerald-700' : f.status === '已取消' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700'}`}>{f.status}</span>
               </div>
               {f.status !== '已完成' && p && (
-                <FollowupActions followupId={f.id} patientId={p.id} nurseId={user.id} />
+                <>
+                  <FollowupActions followupId={f.id} patientId={p.id} nurseId={user.id} />
+                  <div className="mt-2">
+                    <AIDraftBox type="followup" refId={f.id} endpoint={`/geriatric-lung-cancer-care/api/nurse/followups/${f.id}/draft`} title="AI 随访摘要草稿（mock-drafting-v1）" />
+                  </div>
+                </>
               )}
             </li>
           );
@@ -43,3 +48,4 @@ export default async function FollowupsPage() {
 }
 
 import FollowupActions from '../../../components/FollowupActions';
+import AIDraftBox from '../../../components/AIDraftBox';
