@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { requireRole } from '../../../../../lib/guard';
-import { adoptAIAnalysis } from '../../../../../lib/services/ai';
+import { adoptAIAnalysis } from '../../../../../lib/services/ai/analysis';
 import { getDb } from '../../../../../db/client';
 import { aiAnalyses, patients } from '../../../../../db/schema';
 

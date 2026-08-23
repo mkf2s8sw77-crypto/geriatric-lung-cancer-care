@@ -9,6 +9,7 @@ import {
   aiAnalyses, sessions, auditLogs,
 } from '../schema';
 import { computeScore, classifyRisk } from '../../lib/scoring';
+import { generateMockAnalysis, defaultStyle, type AIAnalysisStyle } from '../../lib/services/ai/analysis';
 
 let _seed = 20260812;
 function rand(): number {
@@ -84,16 +85,15 @@ const EDU_BODIES: Array<{ title: string; category: string; applicableStage: stri
   { title: '患者家属沟通指南', category: '心理', applicableStage: '康复期', body: '与患者沟通时使用开放式问题，避免评价；耐心倾听，不强求患者立即表达情绪；尊重患者的节奏。' },
 ];
 
-function mockAI(input: { total: number; top: number; topName: string; stage: string; delta: number | null }) {
-  const level = input.total >= 50 || input.top >= 8 ? 'high' : (input.total >= 30 || input.top >= 5 ? 'medium' : 'low');
-  return {
-    summary: input.topName + ' ' + input.top + ' 分；总分 ' + input.total + '（演示评估）',
-    riskFactors: level === 'low' ? ['症状整体平稳'] : [input.topName + ' 突出'].concat(input.delta !== null && input.delta > 10 ? ['较上次加重'] : []),
-    nurseReview: level === 'high' ? ['建议 24 小时内复评', '通知家属'] : (level === 'medium' ? ['本周内复评', '观察睡眠与饮食'] : ['按常规随访即可']),
-    suggestedFollowup: level === 'high' ? '24 小时内' : (level === 'medium' ? '一周内' : '下次常规随访'),
-    patientHint: level === 'high' ? '请及时联系护士或就医' : (level === 'medium' ? '请关注症状变化，必要时联系护士' : '请保持当前生活习惯'),
-    disclaimer: '本结果为本地确定性演示分析（mock-geriatric-lung-v1），不构成临床诊断，所有建议须经医护人员确认。',
-  };
+function seedMockAI(input: { total: number; top: number; topName: string; topCode?: string; stage: string; delta: number | null; style: AIAnalysisStyle }) {
+  return generateMockAnalysis({
+    total: input.total,
+    top: input.top,
+    topName: input.topName,
+    topCode: input.topCode,
+    stage: input.stage,
+    delta: input.delta,
+  }, input.style);
 }
 
 export async function seedDatabase(): Promise<void> {
@@ -254,15 +254,48 @@ export async function seedDatabase(): Promise<void> {
           summary: risk.reasons.join('；'),
         });
       }
-      const ai = mockAI({ total: sc.totalScore, top: sc.topSymptomScore, topName: sc.topSymptomName || '—', stage, delta: a === 0 ? null : sc.totalScore * 0.1 });
+      const aiInput = { total: sc.totalScore, top: sc.topSymptomScore, topName: sc.topSymptomName || '—', topCode: sc.topSymptomCode || '', stage, delta: a === 0 ? null : sc.totalScore * 0.1 };
+      const aiStyle: AIAnalysisStyle = defaultStyle(aiInput);
+      const ai = seedMockAI({ ...aiInput, style: aiStyle });
       await db.insert(aiAnalyses).values({
         patientId,
         assessmentId: aRow[0].id,
-        model: 'mock-geriatric-lung-v1',
-        inputJson: JSON.stringify({ total: sc.totalScore, top: sc.topSymptomScore, topName: sc.topSymptomName, stage }),
+        model: ai.model,
+        style: ai.style,
+        inputJson: JSON.stringify(aiInput),
         outputJson: JSON.stringify(ai),
+        evidenceJson: JSON.stringify(ai.evidence),
+        patientHint: ai.patientHint,
         status: pick(['已采纳', '部分采纳', '未采纳', '已生成']),
       });
+
+      // 每个患者追加一条 proactive 风格分析（覆盖 3 种风格）
+      if (a === 0) {
+        const pro = seedMockAI({ ...aiInput, style: 'proactive' });
+        await db.insert(aiAnalyses).values({
+          patientId,
+          assessmentId: aRow[0].id,
+          model: pro.model,
+          style: pro.style,
+          inputJson: JSON.stringify(aiInput),
+          outputJson: JSON.stringify(pro),
+          evidenceJson: JSON.stringify(pro.evidence),
+          patientHint: pro.patientHint,
+          status: '已生成',
+        });
+        const cons = seedMockAI({ ...aiInput, style: 'conservative' });
+        await db.insert(aiAnalyses).values({
+          patientId,
+          assessmentId: aRow[0].id,
+          model: cons.model,
+          style: cons.style,
+          inputJson: JSON.stringify(aiInput),
+          outputJson: JSON.stringify(cons),
+          evidenceJson: JSON.stringify(cons.evidence),
+          patientHint: cons.patientHint,
+          status: '已生成',
+        });
+      }
     }
 
     if ((status === '在组' || status === '已完成') && assignedPathwayId) {

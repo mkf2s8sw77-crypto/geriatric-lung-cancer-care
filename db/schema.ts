@@ -291,19 +291,23 @@ export const educationAssignments = sqliteTable('education_assignments', {
   uniqAssign: uniqueIndex('education_assignments_uniq').on(t.patientId, t.resourceId),
 }));
 
-// ai analyses (deterministic mock)
+// ai analyses (deterministic mock) · Phase 5
 export const aiAnalyses = sqliteTable('ai_analyses', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   patientId: integer('patient_id').notNull().references(() => patients.id),
   assessmentId: integer('assessment_id').references(() => assessments.id),
   model: text('model').notNull().default('mock-geriatric-lung-v1'),
+  style: text('style').notNull().default('balanced'), // balanced / conservative / proactive
   inputJson: text('input_json').notNull(),
   outputJson: text('output_json').notNull(),
+  evidenceJson: text('evidence_json').notNull().default('[]'), // 触发的关键阈值（JSON 数组）
+  patientHint: text('patient_hint').notNull().default(''),     // 给患者的简短提示
   status: text('status').notNull().default('已生成'), // 已生成 / 已采纳 / 部分采纳 / 未采纳
   nurseNote: text('nurse_note').notNull().default(''),
   createdAt: text('created_at').notNull().default(now()),
 }, (t) => ({
   patientIdx: index('ai_analyses_patient_idx').on(t.patientId),
+  styleIdx: index('ai_analyses_style_idx').on(t.style),
 }));
 
 // audit logs
