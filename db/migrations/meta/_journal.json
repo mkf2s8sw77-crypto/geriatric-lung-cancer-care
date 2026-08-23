@@ -15,6 +15,13 @@
       "when": 1787444994427,
       "tag": "0001_ai_analysis_upgrade",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787445262961,
+      "tag": "0002_kb_agent",
+      "breakpoints": true
     }
   ]
 }

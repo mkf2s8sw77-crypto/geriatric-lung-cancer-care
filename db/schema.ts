@@ -324,3 +324,33 @@ export const auditLogs = sqliteTable('audit_logs', {
   actorIdx: index('audit_actor_idx').on(t.actorUserId),
   actionIdx: index('audit_action_idx').on(t.action),
 }));
+
+// Phase 5 · 知识库 RAG 智能体（mock）
+export const knowledgeBases = sqliteTable('knowledge_bases', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  category: text('category').notNull(),          // 气道护理 / 压力性损伤 / 化疗护理 / 营养支持 / 心理护理
+  title: text('title').notNull(),
+  source: text('source').notNull(),             // 引用源（演示版）
+  tags: text('tags').notNull().default('[]'),   // JSON 数组
+  body: text('body').notNull().default(''),     // 条文正文 200-500 字
+  approvedBy: text('approved_by').notNull().default('演示护理部'),
+  approvedAt: text('approved_at').notNull().default(now()),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  createdAt: text('created_at').notNull().default(now()),
+}, (t) => ({
+  categoryIdx: index('kb_category_idx').on(t.category),
+}));
+
+// 知识库问答日志（演示轨迹）
+export const knowledgeQuestions = sqliteTable('knowledge_questions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nurseUserId: integer('nurse_user_id').notNull().references(() => users.id),
+  question: text('question').notNull(),
+  matchedKnowledgeIds: text('matched_knowledge_ids').notNull().default('[]'),
+  answerBody: text('answer_body').notNull(),
+  confidence: text('confidence').notNull(),  // high / medium / low
+  confidenceScore: real('confidence_score').notNull().default(0),
+  createdAt: text('created_at').notNull().default(now()),
+}, (t) => ({
+  nurseIdx: index('kq_nurse_idx').on(t.nurseUserId),
+}));
