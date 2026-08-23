@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { eq, desc, and, gte, sql } from 'drizzle-orm';
 import { requireRole } from '../../lib/guard';
 import { getDb } from '../../db/client';
-import { patients, assessments, alerts, tasks, followups, users, aiButlerPushes } from '../../db/schema';
+import { patients, assessments, alerts, tasks, users } from '../../db/schema';
 import { RiskBadge } from '../../components/RiskBadge';
-import { CalendarDays, ClipboardList, Bell, Phone, BookOpen, MessageCircleHeart } from 'lucide-react';
+import { ClipboardList, Bot, Bell, BookOpen } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,10 +40,7 @@ export default async function PatientHome() {
     const nu = await db.select().from(users).where(eq(users.id, patient.primaryNurseId)).limit(1);
     nurseName = nu[0]?.displayName || '';
   }
-  // 管家未读推送数
-  const unreadRows = await db.select({ c: sql<number>`count(*)` }).from(aiButlerPushes).where(and(eq(aiButlerPushes.patientId, patient.id), sql`${aiButlerPushes.readAt} IS NULL`));
-  const unreadPushes = unreadRows[0]?.c || 0;
-  // 任务完成率
+  // 任务完成率（用于在 AI 入口卡里展示）
   const allTasks = await db.select().from(tasks).where(eq(tasks.patientId, patient.id));
   const completedTasks = allTasks.filter((t) => t.status === '已完成').length;
   const completionRate = allTasks.length > 0 ? Math.round((completedTasks / allTasks.length) * 100) : 0;
@@ -56,43 +53,45 @@ export default async function PatientHome() {
         <p className="text-sm text-slate-600 mt-1">责任护士：{nurseName || '未分配'}</p>
       </section>
 
-      <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
-        <h2 className="text-base font-semibold flex items-center gap-2"><ClipboardList size={18} aria-hidden="true" />今日任务</h2>
-        {pending.length === 0 && completed.length === 0 && overdue.length === 0 ? (
-          <p className="text-sm text-slate-500">今日暂无任务。</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {overdue.map((t) => <li key={t.id} className="flex items-center justify-between"><span className="text-risk-high">逾期 · {t.title}</span><span className="text-xs text-slate-500">{t.scheduledDate.slice(0, 10)}</span></li>)}
-            {pending.map((t) => <li key={t.id} className="flex items-center justify-between"><span>{t.title}</span><span className="text-xs text-slate-500">{t.scheduledDate.slice(0, 10)}</span></li>)}
-            {completed.map((t) => <li key={t.id} className="flex items-center justify-between text-slate-500"><span>已完成 · {t.title}</span><span className="text-xs">✓</span></li>)}
-          </ul>
-        )}
-        <div className="pt-2">
-          <Link href="/patient/tasks" className="text-sm text-brand-700 underline">查看全部任务</Link>
-        </div>
-      </section>
+      {/* 三入口卡片：今日任务 / 今日评估 / AI 健康助手，并排首屏可达 */}
+      <div className="grid grid-cols-2 gap-3">
+        <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
+          <h2 className="text-base font-semibold flex items-center gap-2"><ClipboardList size={18} aria-hidden="true" />今日任务</h2>
+          {pending.length === 0 && completed.length === 0 && overdue.length === 0 ? (
+            <p className="text-sm text-slate-500">今日暂无任务。</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {overdue.slice(0, 2).map((t) => <li key={t.id} className="flex items-center justify-between"><span className="text-risk-high">逾期 · {t.title}</span></li>)}
+              {pending.slice(0, 2).map((t) => <li key={t.id} className="flex items-center justify-between"><span>{t.title}</span></li>)}
+              {completed.slice(0, 2).map((t) => <li key={t.id} className="flex items-center justify-between text-slate-500"><span>已完成 · {t.title}</span><span className="text-xs">✓</span></li>)}
+            </ul>
+          )}
+          <Link href="/patient/tasks" className="inline-flex min-h-touch items-center text-sm text-brand-700 underline">查看全部任务</Link>
+        </section>
 
-      <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
-        <h2 className="text-base font-semibold flex items-center gap-2"><CalendarDays size={18} aria-hidden="true" />今日评估</h2>
-        {lastSubmitted ? (
-          <div className="space-y-1">
-            <p className="text-sm">最近评估：总分 <span className="font-semibold">{lastSubmitted.totalScore?.toFixed(1) ?? '—'}</span></p>
-            <p className="text-sm flex items-center gap-2">风险：<RiskBadge level={lastSubmitted.riskLevel as 'low' | 'medium' | 'high' | null} /></p>
-            <p className="text-xs">
-              <Link href={'/patient/assessments/' + lastSubmitted.id} className="text-brand-700 underline">查看本次结果</Link>
-              <span className="mx-1 text-slate-400">·</span>
-              <Link href="/patient/trends" className="text-brand-700 underline">历史趋势</Link>
-            </p>
-            <p className="text-xs text-slate-500">本结果为演示评估，须经医护人员复核。</p>
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">尚未提交评估。</p>
+        <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
+          <h2 className="text-base font-semibold flex items-center gap-2"><BookOpen size={18} aria-hidden="true" />今日评估</h2>
+          {lastSubmitted ? (
+            <div className="space-y-1">
+              <p className="text-sm">总分 <span className="font-semibold">{lastSubmitted.totalScore?.toFixed(1) ?? '—'}</span></p>
+              <p className="text-sm flex items-center gap-2">风险：<RiskBadge level={lastSubmitted.riskLevel as 'low' | 'medium' | 'high' | null} /></p>
+              <Link href={'/patient/assessments/' + lastSubmitted.id} className="inline-flex min-h-touch items-center text-sm text-brand-700 underline">查看本次结果</Link>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">尚未提交评估。</p>
+          )}
+          <Link href="/patient/assessments/draft" className="inline-flex min-h-touch items-center px-3 rounded-md bg-brand-600 text-white text-sm">继续/开始评估</Link>
+          <Link href="/patient/symptoms/new" className="inline-flex min-h-touch items-center text-sm text-brand-700 underline">上报新症状</Link>
+        </section>
+      </div>
+
+      <section className="bg-gradient-to-br from-brand-50 to-white border border-brand-200 rounded-xl p-4 shadow-sm space-y-2">
+        <h2 className="text-base font-semibold flex items-center gap-2 text-brand-700"><Bot size={18} aria-hidden="true" />AI 健康助手</h2>
+        <p className="text-sm text-slate-600">由本地 mock AI 演示引擎驱动，可自由提问今日任务 / 评估 / 随访 / 宣教 / 心情。</p>
+        {allTasks.length > 0 && (
+          <p className="text-xs text-slate-500">任务完成率：{completionRate}%（{completedTasks} / {allTasks.length}）</p>
         )}
-        <div className="pt-2 flex gap-2 flex-wrap">
-          <Link href="/patient/assessments/draft" className="inline-flex min-h-touch items-center px-4 rounded-md bg-brand-600 text-white text-sm">继续/开始评估</Link>
-          <Link href="/patient/symptoms/new" className="inline-flex min-h-touch items-center px-4 rounded-md border border-slate-300 text-sm">上报新症状</Link>
-          <Link href="/patient/trends" className="inline-flex min-h-touch items-center px-4 rounded-md border border-slate-300 text-sm">查看趋势</Link>
-        </div>
+        <Link href="/patient/butler" className="inline-flex min-h-touch items-center px-4 rounded-md bg-brand-600 text-white text-sm">打开 AI 助手</Link>
       </section>
 
       {recentAlerts.length > 0 && (
@@ -108,16 +107,6 @@ export default async function PatientHome() {
         <h2 className="text-base font-semibold flex items-center gap-2"><BookOpen size={18} aria-hidden="true" />推荐阅读</h2>
         <p className="text-sm text-slate-500 mt-1">护士将根据您的治疗阶段推荐合适的宣教材料。</p>
         <Link href="/patient/education" className="text-sm text-brand-700 underline">查看宣教资源</Link>
-      </section>
-
-      <section className="bg-gradient-to-br from-brand-50 to-white border border-brand-200 rounded-xl p-4 shadow-sm space-y-2">
-        <h2 className="text-base font-semibold flex items-center gap-2 text-brand-700"><MessageCircleHeart size={18} aria-hidden="true" />我的健康管家（演示）</h2>
-        <p className="text-sm text-slate-600">由本地 mock AI 驱动的小龙虾会主动推送今日任务、随访、宣教等内容，您也可以自由对话提问。</p>
-        {unreadPushes > 0 && <p className="text-xs text-amber-700">您有 {unreadPushes} 条新推送</p>}
-        {allTasks.length > 0 && (
-          <p className="text-xs text-slate-500">任务完成率：{completionRate}%（{completedTasks} / {allTasks.length}）</p>
-        )}
-        <Link href="/patient/butler" className="inline-flex min-h-touch items-center px-4 rounded-md bg-brand-600 text-white text-sm">打开管家</Link>
       </section>
     </div>
   );

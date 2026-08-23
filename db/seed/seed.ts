@@ -359,9 +359,11 @@ export async function seedDatabase(): Promise<void> {
     }
 
     if ((status === '在组' || status === '已完成') && assignedPathwayId) {
-      const steps = await db.select().from(pathwaySteps).where(eq(pathwaySteps.pathwayId, assignedPathwayId));
-      for (let t = 0; t < 6; t++) {
-        const step = steps[(t + Math.floor(rand() * steps.length)) % steps.length];
+      // 按 ordinal 顺序遍历 pathway 内的所有 step（每位患者至多 N 个不重复任务）；
+      // scheduledDate 在原 relativeDay 基础上 ±2 天抖动。治疗期6 / 康复期5 / 随访期4。
+      const steps = (await db.select().from(pathwaySteps).where(eq(pathwaySteps.pathwayId, assignedPathwayId)))
+        .sort((a, b) => a.ordinal - b.ordinal);
+      for (const step of steps) {
         const offset = step.relativeDay + randInt(-2, 5);
         const isDone = status === '已完成' || rand() < 0.3;
         const isOverdue = !isDone && offset < 0;

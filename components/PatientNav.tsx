@@ -1,13 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ClipboardList, BookOpen, LineChart, User, LogOut } from 'lucide-react';
+import { Home, ClipboardList, Bot, BookOpen, User } from 'lucide-react';
 
 const items = [
   { href: '/patient', label: '首页', icon: Home },
   { href: '/patient/tasks', label: '任务', icon: ClipboardList },
+  { href: '/patient/butler', label: 'AI 助手', icon: Bot },
   { href: '/patient/education', label: '宣教', icon: BookOpen },
-  { href: '/patient/trends', label: '趋势', icon: LineChart },
   { href: '/patient/profile', label: '我的', icon: User },
 ];
 
@@ -29,13 +29,6 @@ export default function PatientNav() {
           );
         })}
       </ul>
-      <div className="absolute -top-10 right-2">
-        <form action="/geriatric-lung-cancer-care/api/auth/logout" method="post">
-          <button type="submit" className="min-w-touch min-h-touch px-3 py-1 bg-white border border-slate-300 rounded-md text-sm flex items-center gap-1" aria-label="退出登录">
-            <LogOut size={14} aria-hidden="true" />退出
-          </button>
-        </form>
-      </div>
     </nav>
   );
 }

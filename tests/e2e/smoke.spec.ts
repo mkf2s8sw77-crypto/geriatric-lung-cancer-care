@@ -41,10 +41,18 @@ test.describe('mobile smoke', () => {
     await expect(page.locator('h1')).toContainText('任务中心');
   });
 
-  test('patient views trends chart', async ({ page }) => {
+  test('patient views trends chart on profile', async ({ page }) => {
+    await login(page, 'patient', '123456');
+    // 第7 轮起：趋势图移入"我的"页；/patient/trends 重定向到 /patient/profile。
+    await page.goto('/geriatric-lung-cancer-care/patient/profile');
+    await expect(page.locator('h1')).toContainText('我的信息');
+    await expect(page.getByText('近 30 天趋势')).toBeVisible();
+  });
+
+  test('patient /trends redirects to /profile', async ({ page }) => {
     await login(page, 'patient', '123456');
     await page.goto('/geriatric-lung-cancer-care/patient/trends');
-    await expect(page.locator('h1')).toContainText('近 30 天趋势');
+    await expect(page).toHaveURL(/\/patient\/profile$/);
   });
 
   test('RBAC: patient cannot access nurse URL', async ({ page }) => {

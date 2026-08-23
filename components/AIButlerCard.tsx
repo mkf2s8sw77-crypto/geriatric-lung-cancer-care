@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Loader2, MessageCircleHeart, BookOpen, ChevronDown } from 'lucide-react';
+import { Send, Loader2, MessageCircleHeart, Bot, ChevronDown } from 'lucide-react';
 
-type Push = { id: number; pushType: string; title: string; body: string; cta: string; ctaHref: string; read: boolean; createdAt: string };
 type Reply = { model: string; intent: string; userText: string; botText: string; matchedRule: string; disclaimer: string; generatedAt: string };
 type HistoryItem = { id: number; userText: string; botReply: string; detectedIntent: string; createdAt: string };
 
@@ -16,41 +15,22 @@ const DEMO_QUESTIONS = [
   '谢谢',
 ];
 
-const PUSH_BG: Record<string, string> = {
-  '今日任务': 'bg-amber-50 border-amber-200',
-  '评估到期': 'bg-violet-50 border-violet-200',
-  '随访临近': 'bg-sky-50 border-sky-200',
-  '宣教推荐': 'bg-emerald-50 border-emerald-200',
-  '心情打卡': 'bg-rose-50 border-rose-200',
-};
-
-const PUSH_ICON: Record<string, string> = {
-  '今日任务': '📋',
-  '评估到期': '📝',
-  '随访临近': '📞',
-  '宣教推荐': '📚',
-  '心情打卡': '💗',
-};
 
 export default function AIButlerCard({ patientName }: { patientName: string }) {
-  const [pushes, setPushes] = useState<Push[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState(true);
   const messagesEnd = useRef<HTMLDivElement>(null);
 
   async function loadAll() {
     setLoading(true);
     try {
-      const [p1, p2] = await Promise.all([
-        fetch('/geriatric-lung-cancer-care/api/patient/butler/pushes').then((r) => r.json()),
-        fetch('/geriatric-lung-cancer-care/api/patient/butler/history').then((r) => r.json()),
-      ]);
-      if (p1.ok) setPushes(p1.data);
-      if (p2.ok) setHistory(p2.data);
+      const r = await fetch('/geriatric-lung-cancer-care/api/patient/butler/history');
+      const j = await r.json();
+      if (j.ok) setHistory(j.data);
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }
@@ -88,70 +68,20 @@ export default function AIButlerCard({ patientName }: { patientName: string }) {
     }
   }
 
-  async function markRead(pushId: number) {
-    try {
-      await fetch('/geriatric-lung-cancer-care/api/patient/butler/mark-read', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pushId }),
-      });
-      setPushes((p) => p.map((x) => x.id === pushId ? { ...x, read: true } : x));
-    } catch { /* ignore */ }
-  }
 
   return (
     <div className="space-y-4">
       {/* 拟人化头部 */}
       <section className="bg-gradient-to-br from-brand-50 to-white border border-brand-200 rounded-xl p-4 shadow-sm flex items-center gap-3">
-        <div className="relative w-14 h-14 rounded-full bg-brand-600 text-white flex items-center justify-center text-2xl shadow-sm shrink-0">
-          🦐
+        <div className="relative w-14 h-14 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-sm shrink-0">
+          <Bot size={28} aria-hidden="true" />
           <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" aria-hidden="true" />
         </div>
         <div className="flex-1">
-          <h2 className="text-base font-semibold text-brand-700">小龙虾 · 您的健康管家</h2>
+          <h2 className="text-base font-semibold text-brand-700">AI 健康助手</h2>
           <p className="text-xs text-slate-500 mt-0.5">在线 · 由 mock AI 演示引擎驱动（不接真实 API）</p>
         </div>
         <span className="text-[10px] text-slate-400">model: {`mock-butler-v1`}</span>
-      </section>
-
-      {/* 推送卡片 */}
-      <section className="bg-white rounded-xl p-4 shadow-sm space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">📬 今日推送</h3>
-        {loading ? <p className="text-sm text-slate-500">加载中…</p> : pushes.length === 0 ? (
-          <p className="text-sm text-slate-500">今日暂无新推送。</p>
-        ) : (
-          <ul className="space-y-2">
-            {pushes.map((p) => (
-              <li key={p.id} className={`border rounded-md p-3 ${PUSH_BG[p.pushType] || 'bg-slate-50 border-slate-200'} ${p.read ? 'opacity-70' : ''}`}>
-                <div className="flex items-start gap-2">
-                  <span className="text-xl shrink-0" aria-hidden="true">{PUSH_ICON[p.pushType] || '🔔'}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-800">{p.title}</span>
-                      <span className="text-[10px] text-slate-400">{p.createdAt.slice(11, 16)}</span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-0.5">{p.body}</p>
-                    {p.cta && p.ctaHref && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <a
-                          href={p.ctaHref.startsWith('/') ? `/geriatric-lung-cancer-care${p.ctaHref}` : p.ctaHref}
-                          onClick={() => void markRead(p.id)}
-                          className="inline-flex min-h-touch items-center px-3 rounded-md bg-brand-600 text-white text-xs"
-                        >
-                          {p.cta}
-                        </a>
-                        {!p.read && (
-                          <button onClick={() => void markRead(p.id)} className="text-xs text-slate-500 underline">
-                            标记已读
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
       {/* 对话区 */}
