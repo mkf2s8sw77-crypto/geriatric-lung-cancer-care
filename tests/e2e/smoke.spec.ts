@@ -151,7 +151,7 @@ test.describe('AI features smoke (Phase 5)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('nurse AI knowledge agent returns a draft answer with citations', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
+    await login(page, 'nurse', '123456');
     const resp = await page.request.post('/geriatric-lung-cancer-care/api/nurse/assistant/ask', {
       data: { question: '吸痰时负压应该是多少？' },
     });
@@ -165,7 +165,7 @@ test.describe('AI features smoke (Phase 5)', () => {
   });
 
   test('patient AI butler send returns intent and disclaimer', async ({ page }) => {
-    await login(page, 'patient_demo', 'Demo@2026');
+    await login(page, 'patient', '123456');
     const resp = await page.request.post('/geriatric-lung-cancer-care/api/patient/butler/send', {
       data: { text: '今天要做什么？' },
     });
@@ -177,8 +177,8 @@ test.describe('AI features smoke (Phase 5)', () => {
   });
 
   test('nurse AI alert draft returns a 4-step draft', async ({ page }) => {
-    await login(page, 'nurse_demo', 'Demo@2026');
-    // 试着找一个属于 nurse_demo 的预警：从 /nurse/alerts 页面抓取首个预警 id
+    await login(page, 'nurse', '123456');
+    // 试着找一个属于 nurse 的预警：从 /nurse/alerts 页面抓取首个预警 id
     await page.goto('/geriatric-lung-cancer-care/nurse/alerts');
     const firstLink = page.locator('a[href*="/nurse/alerts/"]').first();
     let alertId = '1';

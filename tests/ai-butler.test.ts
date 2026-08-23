@@ -16,7 +16,7 @@ let patientId: number;
 beforeAll(async () => {
   const db = getDb();
   // 用 demo 患者
-  const u = await db.select().from(users).where(eq(users.username, 'patient_demo')).limit(1);
+  const u = await db.select().from(users).where(eq(users.username, 'patient')).limit(1);
   if (u.length === 0) throw new Error('demo patient 账号不存在，请先 npm run db:reset');
   const p = await db.select().from(patients).where(eq(patients.userId, u[0].id)).limit(1);
   patientId = p[0].id;

@@ -9,7 +9,7 @@ let testNurseId: number;
 beforeAll(async () => {
   const db = getDb();
   // 用 demo 护士作为测试用户
-  const nurse = await db.select().from(users).where(eq(users.username, 'nurse_demo')).limit(1);
+  const nurse = await db.select().from(users).where(eq(users.username, 'nurse')).limit(1);
   if (nurse.length === 0) throw new Error('demo nurse 账号不存在，请先 npm run db:reset');
   testNurseId = nurse[0].id;
   // 清掉可能残留（仅本测试关心的表，不动 users）
