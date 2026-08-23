@@ -265,9 +265,13 @@ export async function seedDatabase(): Promise<void> {
       await db.insert(patientPathways).values({ patientId, pathwayId: assignedPathwayId, assignedBy: nurseId });
     }
 
+    // 6 次评估的相对日期：5 次落在近 30 天（周节奏）、1 次落在 30-50 天之间。
+    // 配合 status==='在组' 时的轻微上扬，让趋势图能呈现"近期多次评估 + 略微加重"的真实病例感。
+    const assessmentOffsets = [-randInt(0, 2), -randInt(5, 8), -randInt(12, 15), -randInt(19, 22), -randInt(26, 30), -randInt(35, 50)];
     for (let a = 0; a < 6; a++) {
       const ageBias = stage === '康复期' ? 1.0 : (stage === '随访期' ? 0.6 : 1.4);
-      const baseLevel = status === '在组' ? (a === 0 ? 0.6 : 0.4) : (status === '已完成' ? 0.2 : 0.0);
+      // 近几次的 baseLevel 略高，模拟"最近一次评估风险偏高"的演示效果
+      const baseLevel = status === '在组' ? (a <= 1 ? 0.6 : (a <= 3 ? 0.45 : 0.3)) : (status === '已完成' ? 0.2 : 0.0);
       const scoresInput = items.map((it) => {
         const base = randInt(0, 10);
         const adjusted = Math.max(0, Math.min(10, Math.round(base * baseLevel * ageBias + randInt(0, 3))));
@@ -275,13 +279,7 @@ export async function seedDatabase(): Promise<void> {
       });
       const sc = computeScore(scoresInput);
       const scores = scoresInput;
-      // 让近 2 次评估尽量落在 30 天窗口内，让患者趋势图有图可看；
-      // 早一些的评估均匀分布在过去 6 个月内。
-      const recentOffset = a === 0 ? -randInt(0, 5)
-        : a === 1 ? -randInt(7, 28)
-        : a === 2 ? -randInt(35, 60)
-        : -randInt(60, 150) - (a - 2) * 14;
-      const submittedAt = isoDay(recentOffset);
+      const submittedAt = isoDay(assessmentOffsets[a]);
       const aRow = await db.insert(assessments).values({
         patientId,
         scaleId,

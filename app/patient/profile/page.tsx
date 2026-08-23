@@ -46,7 +46,24 @@ export default async function ProfilePage() {
         {trendPoints.length === 0 ? <p className="text-sm text-slate-500">近 30 天暂无已提交评估。</p> : (
           <>
             <TrendChart points={trendPoints} />
-            <p className="text-xs text-slate-500">折线由蓝（总分）和橙（主要症状）组成，仅展示最近 20 条记录。</p>
+            <p className="text-xs text-slate-500">
+              {(() => {
+                const totals = trendPoints.map((p) => p.total);
+                const max = Math.max(...totals);
+                const min = Math.min(...totals);
+                const last = totals[totals.length - 1];
+                const prev = totals.length >= 2 ? totals[totals.length - 2] : null;
+                const diff = prev !== null ? (last - prev).toFixed(1) : null;
+                return (
+                  <span>
+                    近 {trendPoints.length} 次评估 · 最高 {max.toFixed(1)} · 最低 {min.toFixed(1)}
+                    {diff !== null && Number(diff) > 0 && <span className="text-rose-600"> · 较上次 +{diff}</span>}
+                    {diff !== null && Number(diff) < 0 && <span className="text-emerald-600"> · 较上次 {diff}</span>}
+                  </span>
+                );
+              })()}
+            </p>
+            <p className="text-xs text-slate-400">折线由蓝（总分）和橙（主要症状）组成，仅展示最近 20 条记录。</p>
           </>
         )}
         <p className="text-xs text-slate-500">任务完成率：{completionRate}%（{completedTasks} / {allTasks.length}）</p>
