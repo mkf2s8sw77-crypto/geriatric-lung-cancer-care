@@ -6,7 +6,7 @@ import { count } from 'drizzle-orm';
 
 async function main() {
   const errors: string[] = [];
-  const docsPath = 'docs/老年肺癌患者症状群智能评估与全病程管理系统概要设计 2026-08-12.md';
+  const docsPath = 'docs/老年肺癌患者症状群智能评估与全病程管理系统概要设计.md';
   if (!fs.existsSync(docsPath)) errors.push('manual not found');
   if (!fs.existsSync('screenshots')) errors.push('screenshots dir not found');
   // 验证图片引用

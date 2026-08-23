@@ -30,6 +30,26 @@ export const CLUSTER_MAP: Record<string, SymptomCluster> = {
   cough: 'respiratory',
 };
 
+
+// 量表条目 code → 中文显示名（与 seed.ts / scale_items.prompt 中的中文片段保持一致）。
+export const SYMPTOM_LABEL: Record<string, string> = {
+  fatigue: '疲乏无力',
+  pain: '疼痛',
+  dyspnea: '气短/呼吸困难',
+  cough: '咳嗽',
+  sleep: '睡眠紊乱',
+  appetite: '食欲下降',
+  mood: '情绪低落',
+  nausea: '恶心呕吐',
+  weight: '体重变化',
+  daily: '日常活动受限',
+};
+
+export function symptomLabel(code: string | null | undefined): string {
+  if (!code) return '—';
+  return SYMPTOM_LABEL[code] || code;
+}
+
 export const SYMPTOM_CLUSTER_DISCLAIMER = '本归类为演示版映射（躯体 / 营养 / 心理 / 呼吸 4 群），未经过临床验证。';
 
 export function clusterOf(symptomCode: string | null | undefined): SymptomCluster | null {

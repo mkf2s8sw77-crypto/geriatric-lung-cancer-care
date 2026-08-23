@@ -8,7 +8,7 @@ import { RiskBadge } from '../../../../components/RiskBadge';
 import TaskRowNurse from '../../../../components/TaskRowNurse';
 import AIAnalysisSection from '../../../../components/AIAnalysisSection';
 import SymptomClusterBadge from '../../../../components/SymptomClusterBadge';
-import { clusterOf } from '../../../../lib/services/symptom-cluster';
+import { clusterOf, symptomLabel } from '../../../../lib/services/symptom-cluster';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +63,7 @@ export default async function NursePatientDetail({ params }: { params: { id: str
           {latestAssess && (
             <div className="flex items-center gap-2 text-xs">
               <SymptomClusterBadge cluster={cluster} size="xs" />
-              <span className="text-slate-500">主要症状 {latestAssess.topSymptomCode || '—'}</span>
+              <span className="text-slate-500">主要症状 {symptomLabel(latestAssess.topSymptomCode)}</span>
             </div>
           )}
         </div>

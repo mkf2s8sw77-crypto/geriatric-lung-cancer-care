@@ -275,7 +275,13 @@ export async function seedDatabase(): Promise<void> {
       });
       const sc = computeScore(scoresInput);
       const scores = scoresInput;
-      const submittedAt = isoDay(-randInt(0, 90) - a * 14);
+      // 让近 2 次评估尽量落在 30 天窗口内，让患者趋势图有图可看；
+      // 早一些的评估均匀分布在过去 6 个月内。
+      const recentOffset = a === 0 ? -randInt(0, 5)
+        : a === 1 ? -randInt(7, 28)
+        : a === 2 ? -randInt(35, 60)
+        : -randInt(60, 150) - (a - 2) * 14;
+      const submittedAt = isoDay(recentOffset);
       const aRow = await db.insert(assessments).values({
         patientId,
         scaleId,

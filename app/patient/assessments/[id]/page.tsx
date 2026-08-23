@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { requireRole } from '../../../../lib/guard';
 import { getDb } from '../../../../db/client';
 import { assessments, assessmentAnswers, scaleItems } from '../../../../db/schema';
+import { symptomLabel } from '../../../../lib/services/symptom-cluster';
 import { RiskBadge } from '../../../../components/RiskBadge';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,7 @@ export default async function AssessmentResult({ params }: { params: { id: strin
         <p className="text-sm text-slate-500">提交时间：{a.submittedAt?.slice(0, 16).replace('T', ' ') || '—'}</p>
         <p className="text-base">总分：<span className="font-semibold text-2xl">{a.totalScore?.toFixed(1) ?? '—'}</span></p>
         <p className="flex items-center gap-2 text-sm">风险：<RiskBadge level={a.riskLevel as 'low' | 'medium' | 'high' | null} /></p>
-        <p className="text-sm">主要症状：{a.topSymptomCode ?? '—'}（{a.topSymptomScore?.toFixed(1) ?? '—'} 分）</p>
+        <p className="text-sm">主要症状：{symptomLabel(a.topSymptomCode)}（{a.topSymptomScore?.toFixed(1) ?? '—'} 分）</p>
         <p className="text-sm">较上次：{a.deltaVsPrev !== null ? (a.deltaVsPrev > 0 ? '+' : '') + a.deltaVsPrev.toFixed(1) + ' 分' : '首次评估'}</p>
       </div>
       <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -35,7 +36,7 @@ export default async function AssessmentResult({ params }: { params: { id: strin
         <ul className="space-y-1 text-sm">
           {items.map((it) => (
             <li key={it.id} className="flex justify-between border-b border-slate-100 last:border-0 py-1">
-              <span>{it.code}</span>
+              <span>{symptomLabel(it.code)}</span>
               <span>{scoreMap.get(it.id)?.toFixed(1) ?? '—'}</span>
             </li>
           ))}

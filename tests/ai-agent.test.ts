@@ -80,13 +80,11 @@ describe('ai-agent · side effects', () => {
     expect(after).toBe(before + 1);
   });
   it('每次提问写入 audit_logs', async () => {
-    const before = (await getDb().select().from(auditLogs)).length;
+    const before = (await getDb().select().from(auditLogs).where(eq(auditLogs.action, '知识库问答'))).length;
     await askAgent('蛋白', testNurseId);
-    const after = (await getDb().select().from(auditLogs)).length;
-    // 在 threads 模式下，better-sqlite3 单连接是串行的，期望恰好 +1；
-    // 实际可能因 vitest pool=threads 内部串行仍然 +1；若失败可放宽到 >= before + 1
+    const after = (await getDb().select().from(auditLogs).where(eq(auditLogs.action, '知识库问答'))).length;
     expect(after).toBeGreaterThanOrEqual(before + 1);
-    const last = (await getDb().select().from(auditLogs).orderBy(auditLogs.id))[0];
+    const last = (await getDb().select().from(auditLogs).where(eq(auditLogs.action, '知识库问答')).orderBy(auditLogs.id))[0];
     expect(last.action).toBe('知识库问答');
   });
 });

@@ -4,14 +4,10 @@ import { eq } from 'drizzle-orm';
 import { requireRole } from '../../../../../../lib/guard';
 import { getDb } from '../../../../../../db/client';
 import { patients, scaleItems, scales } from '../../../../../../db/schema';
+import { symptomLabel } from '../../../../../../lib/services/symptom-cluster';
 import NurseAssessmentRunner from '../../../../../../components/NurseAssessmentRunner';
 
 export const dynamic = 'force-dynamic';
-
-const SYMPTOM_NAME_MAP: Record<string, string> = {
-  fatigue: '疲乏无力', pain: '疼痛', dyspnea: '气短/呼吸困难', cough: '咳嗽', sleep: '睡眠紊乱',
-  appetite: '食欲下降', mood: '情绪低落', nausea: '恶心呕吐', weight: '体重变化', daily: '日常活动受限',
-};
 
 export default async function NewAssessmentPage({ params }: { params: { id: string } }) {
   const nurse = await requireRole('NURSE');
@@ -25,7 +21,7 @@ export default async function NewAssessmentPage({ params }: { params: { id: stri
   const scale = scaleRows[0];
   if (!scale) return <div className="p-4">暂无已发布量表</div>;
   const items = await db.select().from(scaleItems).where(eq(scaleItems.scaleId, scale.id));
-  const itemsWithName = items.map((it) => ({ ...it, name: SYMPTOM_NAME_MAP[it.code] || it.code }));
+  const itemsWithName = items.map((it) => ({ ...it, name: symptomLabel(it.code) }));
   return (
     <div className="space-y-4">
       <Link href={'/nurse/patients/' + p.id} className="text-sm text-brand-700 underline">返回患者详情</Link>

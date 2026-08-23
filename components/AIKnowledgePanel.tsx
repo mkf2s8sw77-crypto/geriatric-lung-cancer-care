@@ -36,6 +36,16 @@ const CONFIDENCE_BG: Record<string, string> = {
 };
 const CONFIDENCE_LABEL: Record<string, string> = { high: '高置信度', medium: '中置信度', low: '低置信度' };
 
+// 把 mock RAG 用 **term** 标记的关键词高亮渲染为真正的粗体，避免把 **** 字符直接显示给用户。
+function renderHighlighted(text: string) {
+  const parts = text.split(/\*\*/);
+  return parts.map((p, i) =>
+    i % 2 === 1
+      ? <strong key={i} className="font-semibold text-brand-700">{p}</strong>
+      : <span key={i}>{p}</span>
+  );
+}
+
 export default function AIKnowledgePanel() {
   const [categories, setCategories] = useState<KBCat[]>([]);
   const [recent, setRecent] = useState<RecentQ[]>([]);
@@ -146,7 +156,7 @@ export default function AIKnowledgePanel() {
             <span className="text-xs text-slate-400 ml-auto">{new Date(result.generatedAt).toLocaleString('zh-CN', { hour12: false })}</span>
           </div>
           <h3 className="text-sm font-semibold text-slate-800">问题：{result.question}</h3>
-          <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{result.answer}</div>
+          <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{renderHighlighted(result.answer)}</div>
           {result.citations.length > 0 && (
             <details className="text-xs">
               <summary className="cursor-pointer text-slate-500">查看引用知识库（{result.citations.length}）</summary>

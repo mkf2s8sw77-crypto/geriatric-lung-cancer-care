@@ -88,6 +88,16 @@
 - 见「会议背景」与「临床与 AI 边界」小节；三件 AI 全做 + 视觉升级，按 Phase 0 → Phase 5 顺序实施；每 Phase 结束立即回归。
 - 实施细节与方案存档于 `artifacts/plan.md`（本会话快照）；不再单独建 Markdown 设计文档。
 
+### 第六轮：上线前用户视角排查（2026-08-23）
+
+- `BrandHeader.tsx` 顶部 Logo 的 `<Link href="/geriatric-lung-cancer-care/">` 在 basePath 已含同前缀的情况下产生双 basePath，导致所有页面控制台 404 与点击跳到不存在的页面；改为 `<Link href="/">`。
+- `app/api/auth/logout/route.ts` 仅返回 `{ok:true}` JSON，导致所有角色点退出后落到空白 JSON 页；按 `content-type / accept` 区分：表单 POST 时 303 重定向到登录页，fetch/AJAX 仍返回 JSON。
+- `components/AIKnowledgePanel.tsx` 中 mock RAG 用 `**term**` 标记关键词高亮，但回答区直接渲染纯文本，用户看到 `****吸****痰…`。新增 `renderHighlighted()` 把 `**` 分段渲染为 `<strong>`，关键词真正粗体显示。
+- `lib/services/symptom-cluster.ts` 新增 `SYMPTOM_LABEL / symptomLabel(code)` 作为量表 code → 中文显示名的唯一来源；同步替换 `app/patient/assessments/[id]/page.tsx` / `app/nurse/patients/[id]/page.tsx` / `app/nurse/patients/[id]/assessments/new/page.tsx` / `lib/services/ai/analysis.ts` 中散落的 `it.code / topSymptomCode / SYMPTOM_NAME_MAP` 英文展示。
+- `db/seed/seed.ts` 评估时间分布调整：每位患者的最近 2 次评估强制落在近 30 天窗口内，让患者端趋势图默认有数据（之前只有约 10% 患者有近 30 天评估，趋势页大面积"暂无"）。
+- `scripts/verify.ts` 用户手册文件名同步 AGENTS.md，去掉 2026-08-12 后缀，否则 `npm run verify` 必失败。
+- 新增 `tests/regression-bug-fixes.test.ts` 覆盖：症状 code 中文映射、未知 code 兜底、评估 topSymptomCode 全部能映射为中文、最近 30 天评估分布、logout API 存在且支持表单 POST。
+
 ## 环境变量
 
 - `.env.example` 必须包含 `DATABASE_URL`、`SESSION_SECRET`、`APP_BASE_PATH`、`PORT`、`AI_MODE`，不得包含真实密钥。

@@ -7,6 +7,7 @@ import { getDb } from '../../../db/client';
 import { aiAnalyses, assessments, patients } from '../../../db/schema';
 import { recordAudit } from '../../audit';
 import { makeDisclaimer, nowIso, LEVEL_LABEL, type AILevel, type AILevelColor } from './shared';
+import { symptomLabel } from '../../services/symptom-cluster';
 
 export type AIAnalysisStyle = 'balanced' | 'conservative' | 'proactive';
 
@@ -280,7 +281,7 @@ export async function runAnalysisForLatest(patientId: number, nurseUserId: numbe
   const input: AIAnalysisInput = {
     total: a.totalScore || 0,
     top: a.topSymptomScore || 0,
-    topName: SYMPTOM_NAME_MAP[a.topSymptomCode || ''] || a.topSymptomCode || '—',
+    topName: symptomLabel(a.topSymptomCode),
     topCode: a.topSymptomCode || '',
     stage: '',
     delta: a.deltaVsPrev,
@@ -329,24 +330,10 @@ export async function getLatestCompare(patientId: number): Promise<{
   const input: AIAnalysisInput = {
     total: a.totalScore || 0,
     top: a.topSymptomScore || 0,
-    topName: SYMPTOM_NAME_MAP[a.topSymptomCode || ''] || a.topSymptomCode || '—',
+    topName: symptomLabel(a.topSymptomCode),
     topCode: a.topSymptomCode || '',
     stage: '',
     delta: a.deltaVsPrev,
   };
   return { assessmentId: a.id, input, outputs: generateMockAnalysisCompare(input) };
 }
-
-// symptomCode -> 中文名（用于 AI 输出展示）
-export const SYMPTOM_NAME_MAP: Record<string, string> = {
-  fatigue: '疲乏无力',
-  pain: '疼痛',
-  dyspnea: '气短/呼吸困难',
-  cough: '咳嗽',
-  sleep: '睡眠紊乱',
-  appetite: '食欲下降',
-  mood: '情绪低落',
-  nausea: '恶心呕吐',
-  weight: '体重变化',
-  daily: '日常活动受限',
-};

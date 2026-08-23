@@ -5,7 +5,7 @@ export default function BrandHeader({ title, role }: { title?: string; role?: Ro
   return (
     <header className="bg-white border-b border-slate-200">
       <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-between gap-3">
-        <Link href="/geriatric-lung-cancer-care/" className="flex items-center gap-3 min-w-0">
+        <Link href="/" className="flex items-center gap-3 min-w-0">
           <img src="/geriatric-lung-cancer-care/brand/suzhou-municipal-hospital-logo.png" alt="苏州市立医院" className="h-12 sm:h-14 w-auto" />
           <div className="min-w-0 hidden sm:block">
             <p className="text-sm font-semibold text-brand-700 truncate">{title || '老年肺癌患者症状群智能评估与全病程管理系统'}</p>
