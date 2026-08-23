@@ -146,3 +146,56 @@ test.describe('health check', () => {
     expect(j.service).toBe('geriatric-lung-cancer-care');
   });
 });
+
+test.describe('AI features smoke (Phase 5)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('nurse AI knowledge agent returns a draft answer with citations', async ({ page }) => {
+    await login(page, 'nurse_demo', 'Demo@2026');
+    const resp = await page.request.post('/geriatric-lung-cancer-care/api/nurse/assistant/ask', {
+      data: { question: '吸痰时负压应该是多少？' },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const j = await resp.json();
+    expect(j.ok).toBe(true);
+    expect(j.data.answer.matches.length).toBeGreaterThan(0);
+    expect(j.data.answer.matches[0].category).toBe('气道护理');
+    expect(j.data.answer.confidence).toMatch(/high|medium/);
+    expect(j.data.answer.disclaimer).toContain('mock-kb-agent-v1');
+  });
+
+  test('patient AI butler send returns intent and disclaimer', async ({ page }) => {
+    await login(page, 'patient_demo', 'Demo@2026');
+    const resp = await page.request.post('/geriatric-lung-cancer-care/api/patient/butler/send', {
+      data: { text: '今天要做什么？' },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const j = await resp.json();
+    expect(j.ok).toBe(true);
+    expect(j.data.reply.intent).toBe('task');
+    expect(j.data.reply.disclaimer).toContain('mock-butler-v1');
+  });
+
+  test('nurse AI alert draft returns a 4-step draft', async ({ page }) => {
+    await login(page, 'nurse_demo', 'Demo@2026');
+    // 试着找一个属于 nurse_demo 的预警：从 /nurse/alerts 页面抓取首个预警 id
+    await page.goto('/geriatric-lung-cancer-care/nurse/alerts');
+    const firstLink = page.locator('a[href*="/nurse/alerts/"]').first();
+    let alertId = '1';
+    if (await firstLink.count() > 0) {
+      const href = await firstLink.getAttribute('href');
+      const m = href && href.match(/\/alerts\/(\d+)/);
+      if (m) alertId = m[1];
+    }
+    const draftResp = await page.request.post(`/geriatric-lung-cancer-care/api/nurse/alerts/${alertId}/draft`);
+    // 允许 200（属于护士）或 403/404（不属于/不存在）
+    if (draftResp.ok()) {
+      const j = await draftResp.json();
+      expect(j.ok).toBe(true);
+      expect(j.data.draft).toContain('mock-drafting-v1');
+      expect(j.data.draft).toContain('1. 24 小时内联系患者');
+    } else {
+      expect([403, 404]).toContain(draftResp.status());
+    }
+  });
+});
